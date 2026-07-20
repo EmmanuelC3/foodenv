@@ -1,0 +1,293 @@
+---
+title: "Food Swamps, Food Deserts, and Food Oases: Integrating Spatial Analysis and Census Data to Examine Community Food Environments and Socioeconomic Indicators in Henrico County and Virginia Beach City County"
+author: 
+  - name: Emmanuel Christian
+    affil: 1, 4
+  - name: Nathan Alexander, PhD
+    affil: 2, 3, 4
+
+affiliation:
+  - num: 1
+    address: "Department of Health, Human Performance, and Leisure Studies, College of Arts and Sciences"
+  - num: 2
+    address: "Department of Curriculum and Instruction, School of Education"
+  - num: 3
+    address: "Center for Applied Data Science and Analytics, Graduate School"
+  - num: 4
+    address: "Quantitative Histories Workshop"
+
+column_numbers: 3
+
+logoright_name: "img/qs-logo.png"
+logoleft_name: "img/hu-logo.jpg"
+
+titlebox_borderwidth: "0.25cm"
+
+primary_colour: "#ffffff"
+secondary_colour: "#5F6062"
+accent_colour: "#E51937"
+
+titlebox_bordercol: "#003A63"
+title_textcol: "#003A63"
+author_textcol: "#003A63"
+affiliation_textcol: "#003A63"
+
+columnline_col: "#E51937"
+columnline_style: solid
+
+sectitle_textcol: "#ffffff"
+sectitle_bgcol: "#003A63"
+sectitle_bordercol: "#003A63"
+sectitle2_textcol: "#003A63"
+
+output: 
+  posterdown::posterdown_html:
+    css: hu-poster.css
+
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+ # cache = FALSE,
+  fig.width = 4,
+  fig.height = 3,
+  dpi = 300
+)
+
+# Ensure required packages are installed and loaded
+if (!requireNamespace("posterdown", quietly = TRUE)) {
+  pak::pak("brentthorne/posterdown")
+}
+if (!requireNamespace("pagedown", quietly = TRUE)) {
+  pak::pak("rstudio/pagedown")
+}
+
+library(tidycensus)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(viridis)
+library(scales)
+library(readr)
+
+library(posterdown)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(here)
+here::i_am("christian-alexander.Rmd") # if you change the name of your file, update this
+```
+
+```{=html}
+<style>
+@page {
+size: 48in 36in;
+margin: 2in;
+}
+</style>
+```
+
+```{r, eval=F, include=FALSE}
+# To render both HTML and PDF versions:
+rmarkdown::render("christian-alexander.Rmd")
+
+pagedown::chrome_print(
+  "christian-alexander.html",
+  output = "christian-alexander.pdf",
+  options = list(
+    paperWidth = 48, 
+    paperHeight = 36
+    )
+)
+```
+
+# Overview
+
+This study examines how living in a food swamp, food desert, or food oasis shapes community health outcomes, with a focus on Virginia Beach City County and Henrico County. Using spatial analysis and Census data, we investigate how food environments relate to socioeconomic conditions and public health disparities.
+
+# Literature Review
+
+Prior research shows that limited access to supermarkets increases reliance on energy-dense, processed foods, contributing to obesity, hypertension, and diabetes. Structural barriers such as income constraints and transportation limitations further restrict access to healthy food options. Federal policies have attempted but disparities persist in low-income and predominantly Black communities (Walker, Keane, & Burke, 2010).
+
+# Conceptual Framework
+
+*Food Desert*: A geographic area where there is limited access to full-service supermarkets and healthy food options.
+
+*Food Swamp*: A geographic area where convenience stores, fast food restaurants, restaurants, or liquor stores, generally unhealthy food options, heavily outnumber healthier alternatives.
+
+*Food Oasis*: A geographic area where food outlets and grocery stores that offer healthy food options, indicate relatively strong access to nutritious food sources within the local food environment.
+
+# Research Questions
+
+How are tract-level food environments associated with socioeconomic conditions in VA Beach City and Henrico Counties?
+
+# Methods and Data
+
+Data were drawn from the Department of Agriculture Economic Research through the Food Access Research Atlas. The Atlas defines low-access tracts based on distance to the nearest supermarket, while also incorporating income to identify vulnerable populations and construct classifications. We integrate U.S public health data and the `tidycensus()` package in R to conduct an initial case study of food environments in Henrico and Virginia Beach City Counties.
+
+```{r, include=F, warning=F, message=F}
+# Load food access data
+food.access <- read.csv("/Users/nathanalexander/Dropbox/Projects/census/data/food-access/foodaccessdata2019.csv")
+
+# Filter Virginia
+va_food <- food.access %>%
+  filter(State == "Virginia") %>%
+  mutate(GEOID = sprintf("%011.0f", CensusTract))
+
+# Census data
+va_census <- get_acs(
+  geography = "tract",
+  state = "VA",
+  variables = c(
+    total_pop = "B01003_001",
+    median_income = "B19013_001"
+  ),
+  year = 2020,
+  survey = "acs5"
+)
+
+va_census_wide <- va_census %>%
+  select(GEOID, variable, estimate) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+
+# Merge
+va_merged <- va_food %>%
+  left_join(va_census_wide, by = "GEOID")
+
+# Clean
+va_clean <- va_merged %>%
+  mutate(
+    across(where(is.character), ~na_if(., "NULL")),
+    across(
+      c(PovertyRate, MedianFamilyIncome, lalowihalfshare,
+        lasnaphalfshare, lapophalfshare),
+      readr::parse_number
+    )
+  )
+
+# Study counties
+va_study <- va_clean %>%
+  filter(County %in% c("Virginia Beach city", "Henrico County"))
+
+# Classifications
+snap_cut   <- median(va_study$lasnaphalfshare, na.rm = TRUE)
+access_cut <- median(va_study$lapophalfshare, na.rm = TRUE)
+
+va_study <- va_study %>%
+  mutate(
+    food_desert = LILATracts_1And10 == 1,
+    food_oasis  = LILATracts_1And10 == 0 & LowIncomeTracts == 0,
+    food_swamp  = LowIncomeTracts == 1 &
+                  lasnaphalfshare > snap_cut &
+                  lapophalfshare > access_cut,
+    food_env = case_when(
+      food_desert ~ "Desert",
+      food_swamp  ~ "Swamp",
+      food_oasis  ~ "Oasis",
+      TRUE        ~ "Other"
+    )
+  )
+
+# Spatial data
+va_tracts <- get_acs(
+  geography = "tract",
+  state = "VA",
+  county = c("Virginia Beach city", "Henrico County"),
+  variables = "B01003_001",
+  geometry = TRUE
+)
+
+va_map <- va_tracts %>%
+  select(GEOID, geometry) %>%
+  left_join(va_study, by = "GEOID")
+
+# Split maps
+va_beach_map <- va_map %>%
+  filter(County == "Virginia Beach city")
+
+henrico_map <- va_map %>%
+  filter(County == "Henrico County")
+
+food_levels <- c("Desert", "Swamp", "Oasis")
+food_colors <- c(
+  "Desert" = "red",
+  "Swamp"  = "orange",
+  "Oasis"  = "green"
+)
+
+va_map <- va_tracts %>%
+  select(GEOID, geometry) %>%
+  left_join(va_study, by = "GEOID") %>%
+  mutate(
+    food_env = factor(food_env, levels = food_levels)
+  )
+
+map_va_beach <- ggplot(filter(va_map, County == "Virginia Beach city")) +
+  geom_sf(aes(fill = food_env), color = NA, show.legend = TRUE) +
+  scale_fill_manual(
+    values = food_colors,
+    drop = FALSE,
+    limits = food_levels,
+    na.value = "grey85",
+    name = "Type"
+  ) +
+  labs(title = "Virginia Beach City County") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+map_henrico <- ggplot(filter(va_map, County == "Henrico County")) +
+  geom_sf(aes(fill = food_env), color = NA, show.legend = TRUE) +
+  scale_fill_manual(
+    values = food_colors,
+    drop = FALSE,
+    limits = food_levels,
+    na.value = "grey85",
+    name = "Type"
+  ) +
+  labs(title = "Henrico County") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```
+
+# Analytic Method
+
+For our study, 'Food Desert' denotes USDA low-income, low-access (LILA) tracts, "under the 1-mile urban / 10-mile rural Food Access Research Atlas measure", 'Food Oasis' denotes tracts that are neither low income, nor low access. 'Food Swamp' is a study-specific proxy based on tract-level, "access and SNAP-related measures" (U.S. Dept of Agriculture Economic Research, 2019).
+
+# Findings
+
+```{r, message=F, warning=F}
+map_va_beach
+```
+
+```{r, warning=F, messages=F}
+map_henrico
+```
+
+Grey (Other) includes tracts not meeting any study definition.
+
+# Discussion
+
+The majority of the VA Beach area shows up as a food oasis. However, access to and use of these food resources is not equitable.
+
+Similarly, in Henrico County, red areas (deserts) correlate with limited access (spatially isolated) and social demographics (i.e., predominately Black and lower income) by neighborhood.
+
+Findings suggest that lower-income areas are still likely to be classified as food swamps or food deserts even in tourist areas. Tourism matters because it shows up indirectly through land use, food retail incentives, and who food systems are built to serve. Tourist-heavy corridors can also distort how "access" looks on paper (Block, Scribner, & DeSalvo, 2004).
+
+# Conclusion
+
+Food environments play a critical role in shaping community health. Policies aimed at improving access to healthy food—such as incentivizing grocery store development—may help reduce disparities in diet-related health outcomes. However, more work needs to be done on citizen access to food in areas where tourism may mask the presence of food deserts or food swamps.
+
+# Acknowledgements
+
+This work was supported by funding from the Alfred P. Sloan Foundation (Grant 2023-21062) to PI Nathan Alexander.
+
+# References
+
+Block, J. P., Scribner, R. A., & DeSalvo, K. B. (2004). Fast food, race/ethnicity, and income: A geographic analysis. *American Journal of Preventative Medicine, 27*(3), 211-217.
+
+U.S. Dept of Agriculture Economic Research Service. (2019). *Food Access Research Atlas*. Washington, DC.
+
+Walker, R. E., Keane, C. R., Burke, J. G. (2010). Disparities and access to healthy food in the United States: A review of food deserts literature. *Health & Place, 16*(5), 876-884.
