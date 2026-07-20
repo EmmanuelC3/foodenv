@@ -1,107 +1,37 @@
 ---
-title: "Food Swamps, Food Deserts, and Food Oases: Integrating Spatial Analysis and Census Data to Examine Community Food Environments and Socioeconomic Indicators in Henrico County and Virginia Beach City County"
-author: 
-  - name: Emmanuel Christian
-    affil: 1, 4
-  - name: Nathan Alexander, PhD
-    affil: 2, 3, 4
-
-affiliation:
-  - num: 1
-    address: "Department of Health, Human Performance, and Leisure Studies, College of Arts and Sciences"
-  - num: 2
-    address: "Department of Curriculum and Instruction, School of Education"
-  - num: 3
-    address: "Center for Applied Data Science and Analytics, Graduate School"
-  - num: 4
-    address: "Quantitative Histories Workshop"
-
-column_numbers: 3
-
-logoright_name: "img/qs-logo.png"
-logoleft_name: "img/hu-logo.jpg"
-
-titlebox_borderwidth: "0.25cm"
-
-primary_colour: "#ffffff"
-secondary_colour: "#5F6062"
-accent_colour: "#E51937"
-
-titlebox_bordercol: "#003A63"
-title_textcol: "#003A63"
-author_textcol: "#003A63"
-affiliation_textcol: "#003A63"
-
-columnline_col: "#E51937"
-columnline_style: solid
-
-sectitle_textcol: "#ffffff"
-sectitle_bgcol: "#003A63"
-sectitle_bordercol: "#003A63"
-sectitle2_textcol: "#003A63"
-
-output: 
-  posterdown::posterdown_html:
-    css: hu-poster.css
-
-bibliography: references.bib
+title: "Technical File: Food Swamps, Food Deserts, and Food Oases"
+csl: apa.csl
+output:
+  word_document:
+    toc: false
+    reference_docx: word-styles-reference.docx
+  pdf_document:
+    toc: false
+    toc_depth: 2
+    number_section: true 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    theme: flatly
+editor_options:
+  markdown:
+    wrap: sentence
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(
-  echo = FALSE,
- # cache = FALSE,
-  fig.width = 4,
-  fig.height = 3,
-  dpi = 300
+  echo    = knitr::is_html_output(),  # code only in HTML
+  results = knitr::is_html_output(),  # results only in HTML  
+  warning = FALSE,
+  message = FALSE
 )
 
-# Ensure required packages are installed and loaded
-if (!requireNamespace("posterdown", quietly = TRUE)) {
-  pak::pak("brentthorne/posterdown")
-}
-if (!requireNamespace("pagedown", quietly = TRUE)) {
-  pak::pak("rstudio/pagedown")
-}
-
-library(tidycensus)
-library(dplyr)
-library(ggplot2)
-library(sf)
-library(viridis)
-library(scales)
-library(readr)
-
-library(posterdown)
-library(tidyverse)
-library(ggplot2)
-library(scales)
 library(here)
-here::i_am("christian-alexander.Rmd") # if you change the name of your file, update this
+here::i_am("technical-revisions-topologies-of-antiblackness.Rmd")
+
 ```
 
-```{=html}
-<style>
-@page {
-size: 48in 36in;
-margin: 2in;
-}
-</style>
-```
-
-```{r, eval=F, include=FALSE}
-# To render both HTML and PDF versions:
-rmarkdown::render("christian-alexander.Rmd")
-
-pagedown::chrome_print(
-  "christian-alexander.html",
-  output = "christian-alexander.pdf",
-  options = list(
-    paperWidth = 48, 
-    paperHeight = 36
-    )
-)
-```
 
 # Overview
 
