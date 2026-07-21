@@ -28,8 +28,18 @@ knitr::opts_chunk$set(
 )
 
 library(here)
-here::i_am("technical-revisions-topologies-of-antiblackness.Rmd")
-
+here::i_am("technical-file-food-env.Rmd")
+library(tidyverse)
+library(sf)
+library(tidycensus)
+library(segregation)
+library(spdep)
+library(knitr)
+library(ggplot2)
+library(forcats)
+library(purrr)
+library(janitor)
+options(tigris_class = "sf", tigris_use_cache = TRUE)
 ```
 
 
@@ -57,9 +67,9 @@ How are tract-level food environments associated with socioeconomic conditions i
 
 Data were drawn from the Department of Agriculture Economic Research through the Food Access Research Atlas. The Atlas defines low-access tracts based on distance to the nearest supermarket, while also incorporating income to identify vulnerable populations and construct classifications. We integrate U.S public health data and the `tidycensus()` package in R to conduct an initial case study of food environments in Henrico and Virginia Beach City Counties.
 
-```{r, include=F, warning=F, message=F}
+```{r, eval=F, include=F, warning=F, message=F}
 # Load food access data
-food.access <- read.csv("/Users/nathanalexander/Dropbox/Projects/census/data/food-access/foodaccessdata2019.csv")
+food.access <- read.csv("data/food-access/foodaccessdata2019.csv")
 
 # Filter Virginia
 va_food <- food.access %>%
@@ -85,6 +95,14 @@ va_census_wide <- va_census %>%
 # Merge
 va_merged <- va_food %>%
   left_join(va_census_wide, by = "GEOID")
+
+saveRDS(va_merged, file = "va_merged.rds")
+
+```
+
+
+```{r, include=F, warning=F, message=F}
+va_merged <- readRDS("va_merged.rds")
 
 # Clean
 va_clean <- va_merged %>%
