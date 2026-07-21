@@ -32,8 +32,6 @@ here::i_am("technical-file-food-env.Rmd")
 library(tidyverse)
 library(sf)
 library(tidycensus)
-library(segregation)
-library(spdep)
 library(knitr)
 library(ggplot2)
 library(forcats)
@@ -102,7 +100,7 @@ saveRDS(va_merged, file = "va_merged.rds")
 
 
 ```{r, include=F, warning=F, message=F}
-va_merged <- readRDS("va_merged.rds")
+va_merged <- readRDS("data/va_merged.rds")
 
 # Clean
 va_clean <- va_merged %>%
@@ -228,14 +226,3 @@ Findings suggest that lower-income areas are still likely to be classified as fo
 
 Food environments play a critical role in shaping community health. Policies aimed at improving access to healthy food—such as incentivizing grocery store development—may help reduce disparities in diet-related health outcomes. However, more work needs to be done on citizen access to food in areas where tourism may mask the presence of food deserts or food swamps.
 
-# Acknowledgements
-
-This work was supported by funding from the Alfred P. Sloan Foundation (Grant 2023-21062) to PI Nathan Alexander.
-
-# References
-
-Block, J. P., Scribner, R. A., & DeSalvo, K. B. (2004). Fast food, race/ethnicity, and income: A geographic analysis. *American Journal of Preventative Medicine, 27*(3), 211-217.
-
-U.S. Dept of Agriculture Economic Research Service. (2019). *Food Access Research Atlas*. Washington, DC.
-
-Walker, R. E., Keane, C. R., Burke, J. G. (2010). Disparities and access to healthy food in the United States: A review of food deserts literature. *Health & Place, 16*(5), 876-884.
