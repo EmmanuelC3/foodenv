@@ -226,3 +226,284 @@ Findings suggest that lower-income areas are still likely to be classified as fo
 
 Food environments play a critical role in shaping community health. Policies aimed at improving access to healthy food—such as incentivizing grocery store development—may help reduce disparities in diet-related health outcomes. However, more work needs to be done on citizen access to food in areas where tourism may mask the presence of food deserts or food swamps.
 
+```{r, message=F, warning=F}
+# install packages
+#install.packages("tidycensus")
+#install.packages("tidyverse")
+#install.packages("mapview")
+#install.packages("mapgl")
+#install.packages("sf") 
+#install.packages("viridis")
+library(tidycensus)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(viridis)
+library(mapview)
+```
+
+# virginia beach
+Gather spatial data for Virginia Beach, Virginia  
+
+```{r, messages=FALSE, warning=FALSE}
+va_income_sf = get_acs(
+  geography = "county",
+  variables = "B19013_001", # income variable
+  state = "VA",
+  year = 2023,
+  geometry = T
+  )
+
+
+plot(va_income_sf['estimate'])
+
+```
+
+```{r, messages=FALSE, warning=FALSE}
+
+va_henrico_income_sf = get_acs(
+  geography = "tract",
+  county = "Henrico",
+  variables = "B19013_001", # income variable
+  state = "VA",
+  year = 2023,
+  geometry = T
+)
+
+```
+
+# henrico
+
+```{r, messages=FALSE, warning=FALSE}
+ggplot(va_henrico_income_sf) +
+  geom_sf(aes(fill = estimate), color = "white", size = 0.1) +
+  scale_fill_viridis(option = "magma", name = "Median Household Income") +
+  labs(
+    title = "Median Household Income in Henrico County, VA",
+    subtitle = "By Census Tract (2023)",
+    caption = "Data: American Community Survey 5-Year Estimates"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(size = 12),
+    axis.title = element_blank(),
+    legend.position = "right"
+  )
+```
+
+I am about to make map of Richmond city.
+
+
+```{r, message=F, warning=F}
+
+# install packages
+#install.packages("tidycensus")
+#install.packages("tidyverse")
+#install.packages("mapview")
+#install.packages("mapgl")
+#install.packages("sf") 
+#install.packages("viridis")
+library(tidycensus)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(viridis)
+library(mapview)
+library(tidycensus)
+library(tidyverse)
+library(sf)
+library(viridis)
+library(mapview)
+library(gridExtra)
+library(scales)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+va_counties <- get_acs(
+  geography = "county",
+  variables = c(black = "B02001_003", # Black/African American population alone
+                total = "B01001_001" # Total population
+  ),
+  state = "VA",
+  year = 2023,
+  geometry = T,
+  output = "wide"
+)
+
+# Add county FIPS code by extracting first 5 digits of GEOID
+va_counties <- va_counties %>%
+  mutate(county_fips = substr(GEOID, 1, 5)) %>% 
+  relocate(GEOID, county_fips)
+
+#View(va_counties)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+head(va_counties) %>% 
+  select(GEOID, county_fips, NAME, blackE, totalE)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+va_tract <- get_acs(
+geography = "tract",
+variables = c(black = "B02001_003", # Black/African American population alone
+population = "B01001_001", # Total population
+immigrant = "B05002_014", # Immigrant population
+education = "B06009_005", # Individuals that have a bachelor's degree
+poverty = "B17001_001", # Individuals whose household income
+# is below the poverty line
+income = "B19001_001", # Household income
+young1 = "B01001_007", # Male 18-19
+young2 = "B01001_008", # Male 20
+young3 = "B01001_009", # Male 21
+young4 = "B01001_010" # Male 22-24
+),
+state = "VA",
+year = 2023,
+geometry = T,
+output = "wide"
+)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+va_counties %>% 
+  arrange(desc(blackE)) %>%  # desc is descending order
+  head(n=10)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+va_counties %>% 
+  mutate(prop_black = blackE / totalE) %>% 
+  relocate(GEOID, prop_black) %>% 
+  arrange(desc(prop_black))
+```
+
+```{r, messages=FALSE, warning=FALSE}
+va_counties %>% 
+  mutate(prop_black = blackE / totalE) %>% 
+  relocate(GEOID, prop_black) %>% 
+  arrange(-desc(prop_black))
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_tracts <- get_acs(
+  geography = "tract",
+  variables = c(
+    black = "B02001_003",      # Black or African American alone
+    total = "B01001_001"       # Total population
+  ),
+  state = "VA",
+  county = "Virginia Beach City",
+  year = 2023,
+  geometry = TRUE,
+  output = "wide"
+)
+
+virginia_beach_city_tracts %>% 
+  head()
+```
+
+```{r, messages=FALSE, warning=FALSE}
+ggplot(virginia_beach_city_tracts) +
+  geom_sf(aes(fill = blackE), color = NA) +
+  scale_fill_viridis_c(option = "magma", na.value = "grey50", labels = comma) +
+  labs(title = "Estimated Black Population by Census Tract in Virginia Beach City County, VA (2023)",
+       fill = "Population") +
+  theme_minimal()
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_tracts <- virginia_beach_city_tracts %>% 
+  mutate(nonblackE = totalE - blackE) %>% 
+  select(GEOID, blackE, nonblackE, totalE)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+ggplot(virginia_beach_city_tracts) +
+  geom_sf(aes(fill = nonblackE)) +
+  scale_fill_viridis_c(option = "magma", 
+                       na.value = "grey50",
+                       labels = comma) +
+  labs(title = "Estimated Non-Black Population by Census Tract in Virginia Beach City (2023)",
+       fill = "Population") +
+  theme_minimal()
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_tracts <- virginia_beach_city_tracts %>% 
+  mutate(proportion_black = blackE / totalE) %>%
+  mutate(proportion_non_black = 1 - proportion_black)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_tracts %>%
+  arrange(desc(proportion_black)) %>% 
+  select(GEOID, proportion_black, proportion_non_black) %>% 
+  head(n = 10)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_tracts %>%
+  st_set_geometry(NULL) %>%   # Remove geometry to treat as normal data.frame
+  summarise(
+    total_tracts = n(),
+    tracts_above_threshold = sum(proportion_black >= 0.60, na.rm = TRUE),
+    proportion_above_threshold = mean(proportion_black >= 0.60, na.rm = TRUE)
+  )
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_total_black <- sum(virginia_beach_city_tracts$blackE, na.rm = TRUE)
+virginia_beach_city_total_nonblack <- sum(virginia_beach_city_tracts$nonblackE, na.rm = TRUE)
+
+dissimilarity_virginia_beach_city <- 0.5 * sum(abs(
+  (virginia_beach_city_tracts$blackE / virginia_beach_city_total_black) - 
+  (virginia_beach_city_tracts$nonblackE /virginia_beach_city_total_nonblack)
+), na.rm = TRUE)
+dissimilarity_virginia_beach_city
+```
+
+```{r, messages=FALSE, warning=FALSE}
+ggplot(virginia_beach_city_tracts) +
+  geom_sf(aes(fill = proportion_black), color = "white") +
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  labs(title = "Proportion of Black Residents by Census Tract in Virginia Beach City",
+       fill = "Proportion Black") +
+  theme_minimal()
+```
+
+
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_tracts <- virginia_beach_city_tracts %>%
+  mutate(majority_black = proportion_black > 0.5)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+# Union geometries by group
+virginia_beach_city_union_black <- virginia_beach_city_tracts %>%
+  filter(majority_black) %>%
+  summarise(geometry = st_union(geometry))
+
+virginia_beach_city_union_nonblack <- virginia_beach_city_tracts %>%
+  filter(!majority_black) %>%
+  summarise(geometry = st_union(geometry))
+```
+
+```{r, messages=FALSE, warning=FALSE}
+virginia_beach_city_boundary_line = 
+  st_intersection(st_boundary(virginia_beach_city_union_black), st_boundary(virginia_beach_city_union_nonblack))
+```
+
+```{r, messages=FALSE, warning=FALSE}
+ggplot() +
+  geom_sf(data = virginia_beach_city_tracts, aes(fill = majority_black), 
+          color = "grey40", 
+          alpha = 0.5) +
+  geom_sf(data = virginia_beach_city_boundary_line, 
+          color = "red", 
+          size = 1) +
+  labs(title = "Dividing Walls Between Majority Black and Non-Black Areas in Virginia Beach City, VA") +
+  theme_minimal()
+```
