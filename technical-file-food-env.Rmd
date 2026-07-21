@@ -28,7 +28,7 @@ knitr::opts_chunk$set(
 )
 
 library(here)
-here::i_am("technical-revisions-topologies-of-antiblackness.Rmd")
+here::i_am("technical-file-food-env.Rmd")
 
 ```
 
@@ -59,7 +59,7 @@ Data were drawn from the Department of Agriculture Economic Research through the
 
 ```{r, include=F, warning=F, message=F}
 # Load food access data
-food.access <- read.csv("/Users/nathanalexander/Dropbox/Projects/census/data/food-access/foodaccessdata2019.csv")
+food.access <- read.csv("/data/food-access/foodaccessdata2019.csv")
 
 # Filter Virginia
 va_food <- food.access %>%
