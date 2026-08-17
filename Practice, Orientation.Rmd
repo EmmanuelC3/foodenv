@@ -1,0 +1,85 @@
+---
+title: "Practice, Orientation"
+author: "Emmanuel Christian"
+date: "2026-08-12"
+output:   
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true  # Enable floating TOC in the sidebar
+    number_sections: true
+    theme: cerulean
+editor_options:
+  markdown:
+    wrap: sentence
+---
+# Setup 
+
+```{r setup, eval=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+CENSUS_API_KEY='434eb160317a227b094d3fa2711d5072b1dfe07c'
+```
+
+
+```{r, message=F, warning=F}
+# install packages
+#install.packages("tidycensus")
+#install.packages("tidyverse")
+#install.packages("mapview")
+#install.packages("mapgl")
+#install.packages("sf") 
+#install.packages("viridis")
+library(tidycensus)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(viridis)
+library(mapview)
+```
+
+# Virginia Beach
+Gather spatial data for Virginia Beach, Virginia
+
+## Static map
+
+
+```{r, messages=FALSE, warning=FALSE}
+va_income_sf = get_acs(
+  geography = "county",
+  variables = "B19013_001", # income variable
+  state = "VA",
+  year = 2023,
+  geometry = T
+  )
+plot(va_income_sf['estimate'])
+```
+
+
+
+## Interactive map
+
+```{r, messages=FALSE, warning=FALSE}
+mapview(
+  va_income_sf,
+  zcol = "estimate"
+)
+```
+
+```{r, messages=FALSE, warning=FALSE}
+dc_income_sf = get_acs(
+  geography = "tract",
+  variables = "B19013_001", # income variable
+  state = "DC",
+  year = 2024,
+  geometry = T
+  )
+plot(dc_income_sf['estimate'])
+```
+
+```{r, messages=FALSE, warning=FALSE}
+mapview(
+  dc_income_sf,
+  zcol = "estimate"
+)
+```
+
