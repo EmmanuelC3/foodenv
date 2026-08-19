@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+author: "Emmanuel Christian"
+date: "2026-08-12"
+output: html_document
+---
+
+---
+title: "Practice, Orientation"
+author: "Emmanuel Christian"
+date: "2026-08-12"
+output: html_document
+---
+
+
+```{r setup, eval=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+CENSUS_API_KEY='434eb160317a227b094d3fa2711d5072b1dfe07c'
+```
+
+# setup 
+
+```{r, include=FALSE} 
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+```{r, message=F, warning=F}
+# install packages
+#install.packages("tidycensus")
+#install.packages("tidyverse")
+#install.packages("mapview")
+#install.packages("mapgl")
+#install.packages("sf") 
+#install.packages("viridis")
+library(tidycensus)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(viridis)
+library(mapview)
+```
+
+#virginia beach
+Gather spatial data for Virginia Beach, Virginia
+
+```{r, messages=FALSE, warning=FALSE}
+va_income_sf = get_acs(
+  geography = "county",
+  variables = "B19013_001", # income variable
+  state = "VA",
+  year = 2023,
+  geometry = T
+  )
+plot(va_income_sf['estimate'])
+```
+```{r, messages=FALSE, warning=FALSE}
+mapview(
+  va_income_sf,
+  zcol = "estimate"
+)
+```
+
+hello
